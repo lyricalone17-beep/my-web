@@ -1,0 +1,1214 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HostelHub • Camp Meeting Room Allocation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500&amp;display=swap');
+        
+        :root {
+            --tw-color-primary: #00a3ff;
+        }
+        
+        * {
+            transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 150ms;
+        }
+        
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+        
+        .modal {
+            animation: modalPop 0.3s ease-out forwards;
+        }
+        
+        @keyframes modalPop {
+            0% { opacity: 0; transform: scale(0.95); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        
+        .progress-bar {
+            transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200 font-sans">
+    <!-- HEADER -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-screen-2xl mx-auto px-8 py-5 flex items-center justify-between">
+            <div class="flex items-center gap-x-3">
+                <div class="w-10 h-10 bg-[#00a3ff] rounded-2xl flex items-center justify-center text-3xl shadow-inner">🏕️</div>
+                <div>
+                    <h1 class="text-3xl font-semibold tracking-[-1px]" style="font-family: 'Space Grotesk', sans-serif;">HostelHub</h1>
+                    <p class="text-xs text-slate-400 -mt-1">Camp Meeting 2026 • Room Allocation</p>
+                </div>
+                <span class="ml-4 px-4 py-1 text-xs font-medium bg-emerald-400 text-emerald-950 rounded-3xl flex items-center gap-x-1">
+                    <div class="w-2 h-2 bg-emerald-950 rounded-full animate-pulse"></div>
+                    FRONT DESK LIVE
+                </span>
+            </div>
+            
+            <div class="flex items-center gap-x-8">
+                <!-- Totals -->
+                <div onclick="showSection('dashboard')" class="flex items-center gap-x-8 cursor-pointer">
+                    <div class="text-center">
+                        <div class="text-emerald-400 text-sm font-medium">BOYS</div>
+                        <div id="boys-total-header" class="text-2xl font-semibold">181 beds • 354 planned</div>
+                    </div>
+                    <div class="h-10 w-px bg-slate-700"></div>
+                    <div class="text-center">
+                        <div class="text-violet-400 text-sm font-medium">GIRLS</div>
+                        <div id="girls-total-header" class="text-2xl font-semibold">241 beds • 476 planned</div>
+                    </div>
+                    <div class="h-10 w-px bg-slate-700"></div>
+                    <div class="text-center">
+                        <div class="text-amber-400 text-sm font-medium">CAMP TOTAL</div>
+                        <div id="overall-total-header" class="text-2xl font-semibold">422 beds • 830 planned</div>
+                    </div>
+                </div>
+
+                <!-- User -->
+                <div class="flex items-center gap-x-3">
+                    <div class="text-right">
+                        <div class="font-medium">Samuel • Accra, GH</div>
+                        <div class="text-xs text-slate-400">Front Desk Admin • Camp Meeting</div>
+                    </div>
+                    <div class="w-9 h-9 bg-violet-200 text-violet-700 rounded-2xl flex items-center justify-center text-xl">👨‍💼</div>
+                </div>
+                
+                <button onclick="resetAllData()" 
+                        class="flex items-center gap-x-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 rounded-3xl text-sm font-medium">
+                    <span class="text-xl">🔄</span>
+                    CLEAR ALL ALLOCATIONS
+                </button>
+            </div>
+        </div>
+        
+        <!-- NAV -->
+        <nav class="max-w-screen-2xl mx-auto px-8 bg-slate-900 border-t border-slate-800">
+            <div class="flex items-center gap-x-2 text-sm">
+                <a onclick="showSection('dashboard')" 
+                   id="nav-dashboard"
+                   class="nav-link flex items-center gap-x-2 px-6 py-4 border-b-2 border-transparent hover:border-[#00a3ff] active-nav">
+                    📊 DASHBOARD
+                </a>
+                <a onclick="showSection('boys')" 
+                   id="nav-boys"
+                   class="nav-link flex items-center gap-x-2 px-6 py-4 border-b-2 border-transparent hover:border-[#00a3ff]">
+                    👦 BOYS HOUSES
+                </a>
+                <a onclick="showSection('girls')" 
+                   id="nav-girls"
+                   class="nav-link flex items-center gap-x-2 px-6 py-4 border-b-2 border-transparent hover:border-[#00a3ff]">
+                    👧 GIRLS HOUSES
+                </a>
+                <a onclick="showSection('allocation')" 
+                   id="nav-allocation"
+                   class="nav-link flex items-center gap-x-2 px-6 py-4 border-b-2 border-transparent hover:border-[#00a3ff]">
+                    🔄 FRONT DESK ALLOCATION
+                </a>
+                <a onclick="showSection('reports')" 
+                   id="nav-reports"
+                   class="nav-link flex items-center gap-x-2 px-6 py-4 border-b-2 border-transparent hover:border-[#00a3ff]">
+                    📈 CAMP REPORTS
+                </a>
+                
+                <div class="flex-1"></div>
+                
+                <div class="flex items-center bg-slate-800 text-xs rounded-3xl px-4 py-2 gap-x-2">
+                    <span class="text-emerald-400">🟢</span>
+                    CAMP REGISTRATION OPEN • Last update: <span id="last-update">just now</span>
+                </div>
+                
+                <input id="global-search" 
+                       onkeyup="if(event.key==='Enter') handleGlobalSearch()"
+                       type="text" 
+                       placeholder="🔎 Search house or room..."
+                       class="bg-slate-800 text-sm placeholder:text-slate-400 w-72 focus:w-96 px-5 py-3 rounded-3xl outline-none border border-transparent focus:border-[#00a3ff]">
+            </div>
+        </nav>
+    </header>
+
+    <div class="max-w-screen-2xl mx-auto px-8 py-8">
+        
+        <!-- DASHBOARD SECTION -->
+        <div id="section-dashboard">
+            <h2 class="text-4xl font-semibold mb-2 tracking-tight">Welcome back, Samuel 👋</h2>
+            <p class="text-emerald-400 text-lg mb-8">Camp Meeting 2026 • All rooms start at 0 allocated</p>
+            
+            <div class="grid grid-cols-12 gap-6">
+                <!-- KPI Cards -->
+                <div class="col-span-12 md:col-span-3 bg-slate-900 rounded-3xl p-6 card-hover">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-slate-400 text-sm">Total Beds (Physical)</p>
+                            <p id="dash-total-beds" class="text-5xl font-semibold mt-2">422</p>
+                        </div>
+                        <div class="text-5xl">🛏️</div>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-8">Cannot exceed this limit</p>
+                </div>
+                
+                <div class="col-span-12 md:col-span-3 bg-slate-900 rounded-3xl p-6 card-hover">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-slate-400 text-sm">Total Planned Capacity</p>
+                            <p id="dash-total-planned" class="text-5xl font-semibold mt-2">830</p>
+                        </div>
+                        <div class="text-5xl">🎟️</div>
+                    </div>
+                    <p class="text-xs text-emerald-400 mt-8">Target for the entire camp</p>
+                </div>
+                
+                <div class="col-span-12 md:col-span-3 bg-slate-900 rounded-3xl p-6 card-hover">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-slate-400 text-sm">Currently Allocated</p>
+                            <p id="dash-total-current" class="text-5xl font-semibold mt-2">0</p>
+                        </div>
+                        <div class="text-5xl">👥</div>
+                    </div>
+                    <div id="dash-fill-rate" class="mt-8 text-emerald-400 text-sm font-medium flex items-center gap-x-2">
+                        0% of camp filled
+                    </div>
+                </div>
+                
+                <div class="col-span-12 md:col-span-3 bg-slate-900 rounded-3xl p-6 card-hover relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-slate-400 text-sm">Rooms at Risk</p>
+                            <p id="dash-overcapacity" class="text-5xl font-semibold mt-2 text-rose-400">0</p>
+                        </div>
+                        <div class="text-5xl">⚠️</div>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-8">Will turn red if you exceed beds</p>
+                </div>
+                
+                <!-- Quick House Overview -->
+                <div class="col-span-12 mt-6">
+                    <h3 class="text-xl font-medium mb-4 flex items-center gap-x-2"><span>🏕️</span> Quick House Status • 0 allocated so far</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="quick-houses">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+                
+                <!-- Recent Registrations -->
+                <div class="col-span-12 lg:col-span-8 bg-slate-900 rounded-3xl p-6 mt-6">
+                    <h3 class="text-xl font-medium mb-4">Recent Front-Desk Allocations</h3>
+                    <div id="recent-allocations" class="space-y-3">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+                
+                <!-- Gender Split -->
+                <div class="col-span-12 lg:col-span-4 bg-slate-900 rounded-3xl p-6 mt-6">
+                    <h3 class="text-xl font-medium mb-4">Planned Boys vs Girls</h3>
+                    <canvas id="genderChart" class="h-64"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- BOYS SECTION -->
+        <div id="section-boys" class="hidden">
+            <div class="flex justify-between items-baseline mb-8">
+                <h2 class="text-4xl font-semibold tracking-tight">👦 Boys Houses</h2>
+                <div class="flex items-center text-sm text-slate-400">
+                    <span class="px-4 py-2 bg-slate-800 rounded-3xl">Beds: <span id="boys-beds" class="font-semibold text-white">181</span></span>
+                    <span class="px-4 py-2 bg-slate-800 rounded-3xl ml-3">Planned: <span id="boys-planned" class="font-semibold text-white">354</span></span>
+                    <span class="px-4 py-2 bg-slate-800 rounded-3xl ml-3">Allocated: <span id="boys-current" class="font-semibold text-emerald-400">0</span></span>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="boys-houses-grid">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+        
+        <!-- GIRLS SECTION -->
+        <div id="section-girls" class="hidden">
+            <div class="flex justify-between items-baseline mb-8">
+                <h2 class="text-4xl font-semibold tracking-tight">👧 Girls Houses</h2>
+                <div class="flex items-center text-sm text-slate-400">
+                    <span class="px-4 py-2 bg-slate-800 rounded-3xl">Beds: <span id="girls-beds" class="font-semibold text-white">241</span></span>
+                    <span class="px-4 py-2 bg-slate-800 rounded-3xl ml-3">Planned: <span id="girls-planned" class="font-semibold text-white">476</span></span>
+                    <span class="px-4 py-2 bg-slate-800 rounded-3xl ml-3">Allocated: <span id="girls-current" class="font-semibold text-emerald-400">0</span></span>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="girls-houses-grid">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+        
+        <!-- ALLOCATION TOOL SECTION (Front Desk) -->
+        <div id="section-allocation" class="hidden">
+            <h2 class="text-4xl font-semibold tracking-tight mb-8">🔄 Front Desk • Bulk Registration</h2>
+            
+            <!-- Bulk Registration Panel -->
+            <div class="bg-emerald-900/30 border border-emerald-400/30 rounded-3xl p-8 mb-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-2xl font-medium">🎟️ Register campers in bulk</h3>
+                    <div class="flex items-center gap-x-3 text-sm">
+                        <span id="bulk-gender-badge" class="px-4 py-1 bg-emerald-400 text-emerald-950 rounded-3xl font-medium">BOYS</span>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-12 gap-6">
+                    <div class="col-span-12 md:col-span-3">
+                        <label class="text-xs uppercase font-medium block mb-2">House</label>
+                        <select id="bulk-house-select" onchange="updateBulkRoomSelect()" 
+                                class="w-full bg-slate-900 border border-slate-700 focus:border-[#00a3ff] rounded-3xl px-6 py-4 outline-none"></select>
+                    </div>
+                    <div class="col-span-12 md:col-span-3">
+                        <label class="text-xs uppercase font-medium block mb-2">Room</label>
+                        <select id="bulk-room-select" 
+                                class="w-full bg-slate-900 border border-slate-700 focus:border-[#00a3ff] rounded-3xl px-6 py-4 outline-none"></select>
+                    </div>
+                    <div class="col-span-12 md:col-span-6">
+                        <label class="text-xs uppercase font-medium block mb-2">Camper names (one per line)</label>
+                        <textarea id="bulk-names" rows="3"
+                                  class="w-full bg-slate-900 border border-slate-700 focus:border-[#00a3ff] rounded-3xl px-6 py-4 outline-none resize-none"
+                                  placeholder="Kwame Mensah&#10;Abena Asante&#10;..."></textarea>
+                    </div>
+                </div>
+                
+                <div class="flex justify-end gap-x-4 mt-6">
+                    <button onclick="bulkAllocateToRoom()" 
+                            class="flex items-center px-8 py-4 bg-[#00a3ff] hover:bg-[#00b0ff] text-white rounded-3xl text-lg font-medium">
+                        <span class="mr-3 text-2xl">📥</span>
+                        BULK ALLOCATE TO ROOM
+                    </button>
+                    <button onclick="clearBulkForm()" 
+                            class="px-8 py-4 text-slate-400 hover:text-white">Clear form</button>
+                </div>
+                <p class="text-xs text-slate-400 mt-4">Names will be added instantly. System will stop if beds limit is reached.</p>
+            </div>
+            
+            <div class="flex border-b border-slate-700 mb-6">
+                <button onclick="switchAllocationTab(0)" id="alloc-tab-0"
+                        class="alloc-tab px-8 py-4 font-medium border-b-2 border-[#00a3ff] text-[#00a3ff]">👦 Boys Rooms</button>
+                <button onclick="switchAllocationTab(1)" id="alloc-tab-1"
+                        class="alloc-tab px-8 py-4 font-medium">👧 Girls Rooms</button>
+            </div>
+            
+            <div class="flex items-center justify-between mb-6">
+                <input id="allocation-search" 
+                       type="text" 
+                       placeholder="Filter rooms..."
+                       onkeyup="filterAllocationTable()"
+                       class="flex-1 max-w-md bg-slate-900 border border-slate-700 focus:border-[#00a3ff] rounded-3xl px-6 py-4 outline-none">
+                
+                <button onclick="exportAllocationCSV()" 
+                        class="flex items-center px-6 py-4 bg-slate-800 hover:bg-emerald-500 hover:text-white rounded-3xl text-sm font-medium">
+                    📤 Export CSV
+                </button>
+            </div>
+            
+            <div class="bg-slate-900 rounded-3xl overflow-hidden">
+                <table class="w-full" id="allocation-table">
+                    <thead class="bg-slate-800 text-xs uppercase font-medium">
+                        <tr>
+                            <th class="text-left py-5 px-8">House</th>
+                            <th class="text-left py-5 px-8">Room</th>
+                            <th class="text-right py-5 px-8">Beds</th>
+                            <th class="text-right py-5 px-8">Planned</th>
+                            <th class="text-right py-5 px-8">Allocated</th>
+                            <th class="text-center py-5 px-8">% Beds</th>
+                            <th class="text-center py-5 px-8">% Plan</th>
+                            <th class="text-center py-5 px-8">Status</th>
+                            <th class="w-40 py-5 px-8"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="allocation-tbody" class="text-sm divide-y divide-slate-800">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- REPORTS SECTION -->
+        <div id="section-reports" class="hidden">
+            <h2 class="text-4xl font-semibold tracking-tight mb-8">📈 Camp Reports &amp; Progress</h2>
+            
+            <div class="grid grid-cols-12 gap-6">
+                <div class="col-span-12 lg:col-span-8 bg-slate-900 rounded-3xl p-8">
+                    <h3 class="font-medium mb-6">Fill Rate by House (% of planned capacity)</h3>
+                    <canvas id="houseOccupancyChart" class="h-96"></canvas>
+                </div>
+                
+                <div class="col-span-12 lg:col-span-4 space-y-6">
+                    <div class="bg-slate-900 rounded-3xl p-6">
+                        <h3 class="font-medium">Rooms Near Beds Limit</h3>
+                        <ul id="overcapacity-list" class="mt-6 space-y-4 text-sm">
+                            <!-- Populated by JS -->
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-slate-900 rounded-3xl p-6">
+                        <h3 class="font-medium mb-4">Overall Camp Progress</h3>
+                        <div id="utilization-bars" class="space-y-6">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ROOM DETAIL MODAL -->
+    <div onclick="if(event.target.id === 'room-modal')hideModal()" 
+         id="room-modal"
+         class="hidden fixed inset-0 bg-black/70 z-[100] flex items-center justify-center">
+        
+        <div onclick="event.stopImmediatePropagation()" 
+             class="modal bg-slate-900 w-full max-w-2xl mx-4 rounded-3xl overflow-hidden">
+            
+            <div class="px-8 py-6 border-b border-slate-700 flex items-center justify-between">
+                <div>
+                    <span id="modal-house-name" class="text-sm uppercase tracking-widest text-slate-400"></span>
+                    <h3 id="modal-room-name" class="text-3xl font-semibold"></h3>
+                </div>
+                <button onclick="hideModal()" class="text-4xl leading-none text-slate-400 hover:text-white">×</button>
+            </div>
+            
+            <div class="p-8">
+                <div class="grid grid-cols-3 gap-8 mb-8">
+                    <div class="text-center border-r border-slate-700">
+                        <div class="text-4xl font-semibold" id="modal-beds">18</div>
+                        <div class="text-xs text-slate-400">BEDS (max)</div>
+                    </div>
+                    <div class="text-center border-r border-slate-700">
+                        <div class="text-4xl font-semibold" id="modal-target">35</div>
+                        <div class="text-xs text-slate-400">PLANNED</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-4xl font-semibold text-emerald-400" id="modal-current">0</div>
+                        <div class="text-xs text-slate-400">ALLOCATED NOW</div>
+                    </div>
+                </div>
+                
+                <!-- Progress bars -->
+                <div class="mb-8">
+                    <div class="flex justify-between text-xs mb-2">
+                        <span>Physical beds used</span>
+                        <span id="modal-perc-beds">0%</span>
+                    </div>
+                    <div class="h-4 bg-slate-800 rounded-3xl overflow-hidden">
+                        <div id="modal-progress-beds" class="h-4 progress-bar rounded-3xl bg-[#00a3ff]"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-8">
+                    <div class="flex justify-between text-xs mb-2">
+                        <span>Progress toward plan</span>
+                        <span id="modal-perc-plan">0%</span>
+                    </div>
+                    <div class="h-4 bg-slate-800 rounded-3xl overflow-hidden">
+                        <div id="modal-progress-plan" class="h-4 progress-bar rounded-3xl bg-violet-500"></div>
+                    </div>
+                </div>
+                
+                <!-- Bulk in modal (extra option) -->
+                <div class="bg-slate-800 rounded-3xl p-6 mb-8">
+                    <p class="text-xs uppercase mb-3">Quick bulk add (while in this room)</p>
+                    <textarea id="modal-bulk-names" rows="2" 
+                              class="w-full bg-white text-slate-950 px-5 py-4 rounded-3xl outline-none resize-none"
+                              placeholder="Paste extra names here..."></textarea>
+                    <button onclick="bulkAllocateInModal()" 
+                            class="mt-4 w-full bg-emerald-400 hover:bg-emerald-500 text-emerald-950 py-4 rounded-3xl font-medium">ADD THESE CAMPERS TO ROOM</button>
+                </div>
+                
+                <!-- Allocated students -->
+                <h4 class="uppercase text-xs font-medium mb-3">Allocated campers</h4>
+                <div id="modal-students-list" class="max-h-64 overflow-auto bg-slate-800/50 rounded-3xl p-4 text-sm mb-8 space-y-2">
+                    <!-- Populated by JS -->
+                </div>
+                
+                <!-- Single allocation -->
+                <div class="bg-slate-800 rounded-3xl p-6">
+                    <p class="text-xs uppercase mb-4">Add single camper</p>
+                    <div class="flex gap-x-3">
+                        <input id="new-student-name" 
+                               type="text" 
+                               placeholder="Camper full name"
+                               class="flex-1 bg-white text-slate-950 px-5 py-4 rounded-3xl outline-none">
+                        <button onclick="allocateNewStudent()"
+                                class="bg-[#00a3ff] hover:bg-[#00b0ff] text-white px-8 font-medium rounded-3xl">ALLOCATE</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="px-8 py-5 border-t border-slate-700 flex justify-end gap-x-4">
+                <button onclick="hideModal()" 
+                        class="px-8 py-3 text-slate-400">Close</button>
+                <button onclick="resetRoomInModal()" 
+                        class="px-8 py-3 bg-rose-400 hover:bg-rose-500 text-white rounded-3xl">Reset this room</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- SUCCESS TOAST -->
+    <div id="toast" onclick="this.classList.add('hidden')" 
+         class="hidden fixed bottom-8 right-8 bg-emerald-400 text-emerald-950 px-8 py-4 rounded-3xl shadow-2xl flex items-center gap-x-3 text-sm font-medium">
+    </div>
+    
+    <script>
+        // ====================== UPDATED DATA (current = 0, second number = target/planned) ======================
+        let boysHousesData = [
+            {
+                name: "House 1",
+                rooms: [
+                    { id: "b1-1", name: "R1", beds: 18, target: 35, current: 0, students: [] },
+                    { id: "b1-2", name: "R2", beds: 14, target: 25, current: 0, students: [] },
+                    { id: "b1-3", name: "R4", beds: 15, target: 30, current: 0, students: [] }
+                ]
+            },
+            {
+                name: "House 2",
+                rooms: [
+                    { id: "b2-1", name: "R1", beds: 13, target: 20, current: 0, students: [] },
+                    { id: "b2-2", name: "R2", beds: 10, target: 20, current: 0, students: [] },
+                    { id: "b2-3", name: "R3", beds: 22, target: 40, current: 0, students: [] },
+                    { id: "b2-4", name: "R4", beds: 13, target: 25, current: 0, students: [] }
+                ]
+            },
+            {
+                name: "House 3",
+                rooms: [
+                    { id: "b3-1", name: "Dorm 1", beds: 17, target: 34, current: 0, students: [] },
+                    { id: "b3-2", name: "Dorm 2", beds: 18, target: 35, current: 0, students: [] },
+                    { id: "b3-3", name: "Dorm 3", beds: 16, target: 30, current: 0, students: [] }
+                ]
+            },
+            {
+                name: "House 4",
+                rooms: [
+                    { id: "b4-1", name: "R1", beds: 13, target: 36, current: 0, students: [] },
+                    { id: "b4-2", name: "R2", beds: 12, target: 24, current: 0, students: [] }
+                ]
+            }
+        ]
+        
+        let girlsHousesData = [
+            {
+                name: "House 3",
+                rooms: [
+                    { id: "g3-1", name: "Dorm 1", beds: 15, target: 30, current: 0, students: [] },
+                    { id: "g3-2", name: "Dorm 2", beds: 18, target: 35, current: 0, students: [] },
+                    { id: "g3-3", name: "Dorm 3", beds: 12, target: 24, current: 0, students: [] }
+                ]
+            },
+            {
+                name: "House 4",
+                rooms: [
+                    { id: "g4-1", name: "Dorm 3", beds: 20, target: 40, current: 0, students: [] },
+                    { id: "g4-2", name: "Dorm 4", beds: 20, target: 35, current: 0, students: [] },
+                    { id: "g4-3", name: "Annex", beds: 16, target: 32, current: 0, students: [] }
+                ]
+            },
+            {
+                name: "House 1",
+                rooms: [
+                    { id: "g1-1", name: "Pavilion", beds: 70, target: 140, current: 0, students: [] }
+                ]
+            },
+            {
+                name: "House 2",
+                rooms: [
+                    { id: "g2-1", name: "Pavilion", beds: 70, target: 140, current: 0, students: [] }
+                ]
+            }
+        ]
+        
+        let originalBoysData = JSON.parse(JSON.stringify(boysHousesData))
+        let originalGirlsData = JSON.parse(JSON.stringify(girlsHousesData))
+        
+        let currentModalRoom = null
+        let currentModalHouseIndex = null
+        let currentModalIsBoys = true
+        
+        let allocationTab = 0 // 0 = boys, 1 = girls
+        
+        let recentAllocList = []
+        
+        // ====================== HELPERS ======================
+        function calculateHouseStats(houses) {
+            let totalBeds = 0, totalTarget = 0, totalCurrent = 0
+            houses.forEach(h => {
+                h.rooms.forEach(r => {
+                    totalBeds += r.beds
+                    totalTarget += r.target
+                    totalCurrent += r.current
+                })
+            })
+            return { totalBeds, totalTarget, totalCurrent }
+        }
+        
+        function getOccupancyColor(perc) {
+            if (perc > 100) return "bg-rose-500"
+            if (perc > 80) return "bg-orange-500"
+            return "bg-emerald-500"
+        }
+        
+        function getStatusBadge(current, beds, target) {
+            const percBeds = Math.round((current / beds) * 100)
+            if (percBeds > 100) return `<span class="inline-flex items-center px-3 py-1 text-xs font-medium bg-rose-400 text-white rounded-3xl">OVER BEDS</span>`
+            if (percBeds > 90) return `<span class="inline-flex items-center px-3 py-1 text-xs font-medium bg-amber-400 text-amber-950 rounded-3xl">NEAR LIMIT</span>`
+            return `<span class="inline-flex items-center px-3 py-1 text-xs font-medium bg-emerald-400 text-emerald-950 rounded-3xl">GOOD</span>`
+        }
+        
+        function renderProgress(perc, color) {
+            return `
+                <div class="h-3 bg-slate-700 rounded-3xl overflow-hidden">
+                    <div class="progress-bar h-3 ${color}" style="width: ${Math.min(perc, 200)}%"></div>
+                </div>
+                <div class="text-xs text-right mt-1">${perc}%</div>
+            `
+        }
+        
+        // ====================== RENDER HOUSE GRIDS ======================
+        function renderBoysHouses() {
+            const container = document.getElementById("boys-houses-grid")
+            container.innerHTML = ""
+            
+            boysHousesData.forEach((house, houseIndex) => {
+                const stats = calculateHouseStats([house])
+                const percPlan = Math.round((stats.totalCurrent / stats.totalTarget) * 100)
+                const percBeds = Math.round((stats.totalCurrent / stats.totalBeds) * 100)
+                
+                let html = `
+                <div onclick="openHouseModal(true, ${houseIndex})" class="card-hover bg-slate-900 rounded-3xl p-6 cursor-pointer">
+                    <div class="flex justify-between">
+                        <div class="font-semibold text-xl">${house.name}</div>
+                        <div class="text-xl">👦</div>
+                    </div>
+                    <div class="mt-6 grid grid-cols-3 text-center text-xs">
+                        <div>Beds<br><span class="font-semibold text-lg">${stats.totalBeds}</span></div>
+                        <div>Planned<br><span class="font-semibold text-lg">${stats.totalTarget}</span></div>
+                        <div>Allocated<br><span class="font-semibold text-emerald-400 text-lg">${stats.totalCurrent}</span></div>
+                    </div>
+                    <div class="mt-6">
+                        <div class="flex justify-between text-xs mb-1"><span>To plan</span><span>${percPlan}%</span></div>
+                        ${renderProgress(percPlan, 'bg-violet-500')}
+                    </div>
+                    <div class="text-xs mt-4 flex items-center justify-between">
+                        ${getStatusBadge(stats.totalCurrent, stats.totalBeds, stats.totalTarget)}
+                        <span class="text-slate-400">${house.rooms.length} rooms</span>
+                    </div>
+                </div>`
+                
+                container.innerHTML += html
+            })
+            
+            const stats = calculateHouseStats(boysHousesData)
+            document.getElementById("boys-beds").textContent = stats.totalBeds
+            document.getElementById("boys-planned").textContent = stats.totalTarget
+            document.getElementById("boys-current").textContent = stats.totalCurrent
+        }
+        
+        function renderGirlsHouses() {
+            const container = document.getElementById("girls-houses-grid")
+            container.innerHTML = ""
+            
+            girlsHousesData.forEach((house, houseIndex) => {
+                const stats = calculateHouseStats([house])
+                const percPlan = Math.round((stats.totalCurrent / stats.totalTarget) * 100)
+                const percBeds = Math.round((stats.totalCurrent / stats.totalBeds) * 100)
+                
+                let html = `
+                <div onclick="openHouseModal(false, ${houseIndex})" class="card-hover bg-slate-900 rounded-3xl p-6 cursor-pointer">
+                    <div class="flex justify-between">
+                        <div class="font-semibold text-xl">${house.name}</div>
+                        <div class="text-xl">👧</div>
+                    </div>
+                    <div class="mt-6 grid grid-cols-3 text-center text-xs">
+                        <div>Beds<br><span class="font-semibold text-lg">${stats.totalBeds}</span></div>
+                        <div>Planned<br><span class="font-semibold text-lg">${stats.totalTarget}</span></div>
+                        <div>Allocated<br><span class="font-semibold text-emerald-400 text-lg">${stats.totalCurrent}</span></div>
+                    </div>
+                    <div class="mt-6">
+                        <div class="flex justify-between text-xs mb-1"><span>To plan</span><span>${percPlan}%</span></div>
+                        ${renderProgress(percPlan, 'bg-violet-500')}
+                    </div>
+                    <div class="text-xs mt-4 flex items-center justify-between">
+                        ${getStatusBadge(stats.totalCurrent, stats.totalBeds, stats.totalTarget)}
+                        <span class="text-slate-400">${house.rooms.length} rooms</span>
+                    </div>
+                </div>`
+                
+                container.innerHTML += html
+            })
+            
+            const stats = calculateHouseStats(girlsHousesData)
+            document.getElementById("girls-beds").textContent = stats.totalBeds
+            document.getElementById("girls-planned").textContent = stats.totalTarget
+            document.getElementById("girls-current").textContent = stats.totalCurrent
+        }
+        
+        // ====================== MODAL ======================
+        function openHouseModal(isBoys, houseIndex) {
+            currentModalIsBoys = isBoys
+            currentModalHouseIndex = houseIndex
+            const houses = isBoys ? boysHousesData : girlsHousesData
+            currentModalRoom = houses[houseIndex].rooms[0]
+            renderModal()
+            document.getElementById("room-modal").classList.remove("hidden")
+            document.getElementById("room-modal").classList.add("flex")
+        }
+        
+        function renderModal() {
+            if (!currentModalRoom) return
+            const houses = currentModalIsBoys ? boysHousesData : girlsHousesData
+            const house = houses[currentModalHouseIndex]
+            
+            document.getElementById("modal-house-name").innerHTML = `
+                ${currentModalIsBoys ? "👦" : "👧"} ${house.name}
+            `
+            document.getElementById("modal-room-name").textContent = currentModalRoom.name
+            
+            document.getElementById("modal-beds").textContent = currentModalRoom.beds
+            document.getElementById("modal-target").textContent = currentModalRoom.target
+            document.getElementById("modal-current").textContent = currentModalRoom.current
+            
+            const percBeds = Math.round((currentModalRoom.current / currentModalRoom.beds) * 100)
+            const percPlan = Math.round((currentModalRoom.current / currentModalRoom.target) * 100)
+            
+            document.getElementById("modal-perc-beds").textContent = percBeds + "%"
+            document.getElementById("modal-perc-plan").textContent = percPlan + "%"
+            
+            const progBeds = document.getElementById("modal-progress-beds")
+            progBeds.style.width = `${Math.min(percBeds, 200)}%`
+            progBeds.className = `h-4 progress-bar rounded-3xl ${getOccupancyColor(percBeds)}`
+            
+            const progPlan = document.getElementById("modal-progress-plan")
+            progPlan.style.width = `${Math.min(percPlan, 200)}%`
+            
+            // Students list
+            const listEl = document.getElementById("modal-students-list")
+            listEl.innerHTML = currentModalRoom.students.length 
+                ? currentModalRoom.students.map((name, i) => `
+                    <div class="flex justify-between items-center bg-white/10 rounded-2xl px-4 py-3">
+                        <span>${name}</span>
+                        <span onclick="removeStudent(${i}); event.stopImmediatePropagation()" class="cursor-pointer text-rose-400 text-xs">REMOVE</span>
+                    </div>`).join("")
+                : `<div class="text-slate-400 italic text-center py-8">No campers allocated yet</div>`
+        }
+        
+        function hideModal() {
+            const modal = document.getElementById("room-modal")
+            modal.classList.add("hidden")
+            modal.classList.remove("flex")
+            currentModalRoom = null
+        }
+        
+        function allocateNewStudent() {
+            const input = document.getElementById("new-student-name")
+            const name = input.value.trim()
+            if (!name || !currentModalRoom) return
+            
+            if (currentModalRoom.current >= currentModalRoom.beds) {
+                alert("Cannot add more – beds limit reached!")
+                return
+            }
+            
+            currentModalRoom.current++
+            currentModalRoom.students.push(name)
+            addToRecentAllocations(currentModalIsBoys ? "👦" : "👧", 
+                currentModalIsBoys ? boysHousesData[currentModalHouseIndex].name : girlsHousesData[currentModalHouseIndex].name, 
+                currentModalRoom.name, name)
+            
+            input.value = ""
+            renderModal()
+            refreshAllUI()
+            showToast("✅ Camper added!")
+        }
+        
+        function bulkAllocateInModal() {
+            const textarea = document.getElementById("modal-bulk-names")
+            const namesText = textarea.value.trim()
+            if (!namesText || !currentModalRoom) return
+            
+            const names = namesText.split(/\n|,/).map(n => n.trim()).filter(n => n)
+            
+            let added = 0
+            for (let name of names) {
+                if (currentModalRoom.current >= currentModalRoom.beds) {
+                    showToast(`⚠️ Stopped at ${added} – beds full`)
+                    break
+                }
+                currentModalRoom.current++
+                currentModalRoom.students.push(name)
+                added++
+                addToRecentAllocations(currentModalIsBoys ? "👦" : "👧", 
+                    currentModalIsBoys ? boysHousesData[currentModalHouseIndex].name : girlsHousesData[currentModalHouseIndex].name, 
+                    currentModalRoom.name, name)
+            }
+            
+            textarea.value = ""
+            renderModal()
+            refreshAllUI()
+            showToast(`✅ ${added} campers added in bulk!`)
+        }
+        
+        function removeStudent(index) {
+            if (!currentModalRoom) return
+            currentModalRoom.students.splice(index, 1)
+            currentModalRoom.current = Math.max(0, currentModalRoom.current - 1)
+            renderModal()
+            refreshAllUI()
+        }
+        
+        function resetRoomInModal() {
+            if (!currentModalRoom) return
+            currentModalRoom.students = []
+            currentModalRoom.current = 0
+            renderModal()
+            refreshAllUI()
+            showToast("Room reset")
+        }
+        
+        // ====================== BULK FRONT DESK ======================
+        function populateBulkSelects() {
+            const houseSelect = document.getElementById("bulk-house-select")
+            const data = allocationTab === 0 ? boysHousesData : girlsHousesData
+            houseSelect.innerHTML = data.map((house, i) => `<option value="${i}">${house.name}</option>`).join("")
+            updateBulkRoomSelect()
+        }
+        
+        function updateBulkRoomSelect() {
+            const houseSelect = document.getElementById("bulk-house-select")
+            const roomSelect = document.getElementById("bulk-room-select")
+            const data = allocationTab === 0 ? boysHousesData : girlsHousesData
+            const houseIndex = parseInt(houseSelect.value)
+            const house = data[houseIndex]
+            
+            roomSelect.innerHTML = house.rooms.map((room, i) => 
+                `<option value="${i}">${room.name} (${room.beds} beds, ${room.target} planned)</option>`
+            ).join("")
+        }
+        
+        function bulkAllocateToRoom() {
+            const houseIndex = parseInt(document.getElementById("bulk-house-select").value)
+            const roomIndex = parseInt(document.getElementById("bulk-room-select").value)
+            const textarea = document.getElementById("bulk-names")
+            const namesText = textarea.value.trim()
+            
+            if (!namesText) {
+                alert("Please enter camper names")
+                return
+            }
+            
+            const data = allocationTab === 0 ? boysHousesData : girlsHousesData
+            const room = data[houseIndex].rooms[roomIndex]
+            const names = namesText.split(/\n|,/).map(n => n.trim()).filter(n => n)
+            
+            let added = 0
+            for (let name of names) {
+                if (room.current >= room.beds) {
+                    showToast(`⚠️ Stopped – ${room.name} beds full after ${added} campers`)
+                    break
+                }
+                room.current++
+                room.students.push(name)
+                added++
+                addToRecentAllocations(allocationTab === 0 ? "👦" : "👧", 
+                    data[houseIndex].name, room.name, name)
+            }
+            
+            textarea.value = ""
+            refreshAllUI()
+            renderAllocationTable()
+            showToast(`✅ ${added} campers successfully allocated in bulk!`)
+        }
+        
+        function clearBulkForm() {
+            document.getElementById("bulk-names").value = ""
+        }
+        
+        // ====================== ALLOCATION TABLE ======================
+        function switchAllocationTab(tab) {
+            allocationTab = tab
+            document.querySelectorAll(".alloc-tab").forEach((el, i) => {
+                if (i === tab) {
+                    el.classList.add("border-b-2", "border-[#00a3ff]", "text-[#00a3ff]")
+                } else {
+                    el.classList.remove("border-b-2", "border-[#00a3ff]", "text-[#00a3ff]")
+                }
+            })
+            document.getElementById("bulk-gender-badge").textContent = tab === 0 ? "BOYS" : "GIRLS"
+            populateBulkSelects()
+            renderAllocationTable()
+        }
+        
+        function renderAllocationTable(filteredRooms = null) {
+            const tbody = document.getElementById("allocation-tbody")
+            tbody.innerHTML = ""
+            
+            const data = allocationTab === 0 ? boysHousesData : girlsHousesData
+            
+            let roomsToShow = []
+            data.forEach((house, houseIdx) => {
+                house.rooms.forEach((room, roomIdx) => {
+                    roomsToShow.push({
+                        houseName: house.name,
+                        houseIdx: houseIdx,
+                        roomIdx: roomIdx,
+                        ...room,
+                        isBoys: allocationTab === 0
+                    })
+                })
+            })
+            
+            if (filteredRooms) roomsToShow = filteredRooms
+            
+            roomsToShow.forEach(room => {
+                const percBeds = Math.round((room.current / room.beds) * 100)
+                const percPlan = Math.round((room.current / room.target) * 100)
+                
+                const row = document.createElement("tr")
+                row.className = "hover:bg-slate-800/70"
+                row.innerHTML = `
+                    <td class="py-5 px-8 font-medium">${room.houseName}</td>
+                    <td class="py-5 px-8">${room.name}</td>
+                    <td class="py-5 px-8 text-right">${room.beds}</td>
+                    <td class="py-5 px-8 text-right">${room.target}</td>
+                    <td class="py-5 px-8 text-right font-semibold text-emerald-400">${room.current}</td>
+                    <td class="py-5 px-8 text-center">${renderProgress(percBeds, getOccupancyColor(percBeds))}</td>
+                    <td class="py-5 px-8 text-center">${renderProgress(percPlan, 'bg-violet-500')}</td>
+                    <td class="py-5 px-8 text-center">${getStatusBadge(room.current, room.beds, room.target)}</td>
+                    <td class="py-5 px-8">
+                        <button onclick="openRoomFromTable('${room.id}', ${room.isBoys}); event.stopImmediatePropagation()" 
+                                class="text-xs font-medium bg-[#00a3ff] hover:bg-[#00b0ff] text-white px-5 py-2 rounded-3xl">DETAILS / ADD</button>
+                    </td>
+                `
+                tbody.appendChild(row)
+            })
+            
+            if (roomsToShow.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="py-12 text-center text-slate-400">No matching rooms</td></tr>`
+            }
+        }
+        
+        function filterAllocationTable() {
+            const query = document.getElementById("allocation-search").value.toLowerCase().trim()
+            if (!query) {
+                renderAllocationTable()
+                return
+            }
+            
+            const data = allocationTab === 0 ? boysHousesData : girlsHousesData
+            let filtered = []
+            
+            data.forEach((house, houseIdx) => {
+                house.rooms.forEach((room, roomIdx) => {
+                    if (house.name.toLowerCase().includes(query) || room.name.toLowerCase().includes(query)) {
+                        filtered.push({
+                            houseName: house.name,
+                            houseIdx: houseIdx,
+                            roomIdx: roomIdx,
+                            ...room,
+                            isBoys: allocationTab === 0
+                        })
+                    }
+                })
+            })
+            renderAllocationTable(filtered)
+        }
+        
+        function openRoomFromTable(roomId, isBoys) {
+            const houses = isBoys ? boysHousesData : girlsHousesData
+            let found = false
+            for (let i = 0; i < houses.length; i++) {
+                const r = houses[i].rooms.find(room => room.id === roomId)
+                if (r) {
+                    currentModalIsBoys = isBoys
+                    currentModalHouseIndex = i
+                    currentModalRoom = r
+                    found = true
+                    break
+                }
+            }
+            if (found) {
+                hideModal()
+                document.getElementById("room-modal").classList.remove("hidden")
+                document.getElementById("room-modal").classList.add("flex")
+                renderModal()
+            }
+        }
+        
+        function exportAllocationCSV() {
+            const data = allocationTab === 0 ? boysHousesData : girlsHousesData
+            let csv = "House,Room,Beds,Planned,Allocated,%Beds,%Plan\n"
+            
+            data.forEach(h => {
+                h.rooms.forEach(r => {
+                    const percBeds = Math.round((r.current / r.beds) * 100)
+                    const percPlan = Math.round((r.current / r.target) * 100)
+                    csv += `"${h.name}","${r.name}",${r.beds},${r.target},${r.current},${percBeds},${percPlan}\n`
+                })
+            })
+            
+            const blob = new Blob([csv], { type: "text/csv" })
+            const link = document.createElement("a")
+            link.href = URL.createObjectURL(blob)
+            link.download = `${allocationTab === 0 ? "boys" : "girls"}_camp_allocation.csv`
+            link.click()
+            showToast("📤 CSV exported!")
+        }
+        
+        // ====================== DASHBOARD ======================
+        function renderDashboard() {
+            const boysStats = calculateHouseStats(boysHousesData)
+            const girlsStats = calculateHouseStats(girlsHousesData)
+            const totalCurrent = boysStats.totalCurrent + girlsStats.totalCurrent
+            const totalPlanned = boysStats.totalTarget + girlsStats.totalTarget
+            const totalBeds = boysStats.totalBeds + girlsStats.totalBeds
+            
+            document.getElementById("dash-total-beds").textContent = totalBeds
+            document.getElementById("dash-total-planned").textContent = totalPlanned
+            document.getElementById("dash-total-current").textContent = totalCurrent
+            document.getElementById("dash-fill-rate").innerHTML = `${Math.round((totalCurrent / totalPlanned) * 100)}% of camp filled`
+            
+            // Overcapacity count
+            let over = 0
+            boysHousesData.forEach(h => h.rooms.forEach(r => { if (r.current > r.beds) over++ }))
+            girlsHousesData.forEach(h => h.rooms.forEach(r => { if (r.current > r.beds) over++ }))
+            document.getElementById("dash-overcapacity").textContent = over
+            
+            // Quick houses
+            const qContainer = document.getElementById("quick-houses")
+            qContainer.innerHTML = ""
+            boysHousesData.slice(0, 2).forEach((h, i) => {
+                const stats = calculateHouseStats([h])
+                const perc = Math.round((stats.totalCurrent / stats.totalTarget) * 100)
+                qContainer.innerHTML += `
+                <div onclick="showSection('boys')" class="bg-slate-900 rounded-3xl p-5 flex justify-between items-center cursor-pointer card-hover">
+                    <div>
+                        <div class="text-emerald-400">${h.name}</div>
+                        <div class="text-2xl font-semibold">${stats.totalCurrent}/${stats.totalTarget}</div>
+                    </div>
+                    <div class="text-4xl">👦</div>
+                </div>`
+            })
+            girlsHousesData.slice(0, 2).forEach((h, i) => {
+                const stats = calculateHouseStats([h])
+                const perc = Math.round((stats.totalCurrent / stats.totalTarget) * 100)
+                qContainer.innerHTML += `
+                <div onclick="showSection('girls')" class="bg-slate-900 rounded-3xl p-5 flex justify-between items-center cursor-pointer card-hover">
+                    <div>
+                        <div class="text-violet-400">${h.name}</div>
+                        <div class="text-2xl font-semibold">${stats.totalCurrent}/${stats.totalTarget}</div>
+                    </div>
+                    <div class="text-4xl">👧</div>
+                </div>`
+            })
+            
+            renderRecentAllocations()
+            renderDashboardCharts()
+        }
+        
+        function addToRecentAllocations(genderIcon, house, room, student) {
+            recentAllocList.unshift({
+                time: "just now",
+                genderIcon: genderIcon,
+                house: house,
+                room: room,
+                student: student
+            })
+            if (recentAllocList.length > 6) recentAllocList.pop()
+            renderRecentAllocations()
+        }
+        
+        function renderRecentAllocations() {
+            const container = document.getElementById("recent-allocations")
+            container.innerHTML = recentAllocList.length ? "" : `<div class="text-slate-400 italic text-center py-8">No allocations yet – start registering at front desk</div>`
+            
+            recentAllocList.forEach(item => {
+                const div = document.createElement("div")
+                div.className = "flex items-center bg-slate-800/60 rounded-3xl px-6 py-4"
+                div.innerHTML = `
+                    <div class="text-2xl mr-4">${item.genderIcon}</div>
+                    <div class="flex-1">
+                        <div class="font-medium">${item.student}</div>
+                        <div class="text-xs text-slate-400">${item.house} • ${item.room}</div>
+                    </div>
+                    <div class="text-xs text-slate-400">${item.time}</div>
+                `
+                container.appendChild(div)
+            })
+        }
+        
+        function renderDashboardCharts() {
+            // Gender planned split
+            const genderCtx = document.getElementById("genderChart")
+            if (genderCtx.chartInstance) genderCtx.chartInstance.destroy()
+            genderCtx.chartInstance = new Chart(genderCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Boys', 'Girls'],
+                    datasets: [{
+                        data: [354, 476],
+                        backgroundColor: ['#00a3ff', '#c026d3'],
+                        borderColor: '#0f172a',
+                        borderWidth: 8
+                    }]
+                },
+                options: {
+                    cutout: "75%",
+                    plugins: {
+                        legend: { display: true, position: 'bottom', labels: { boxWidth: 12, padding: 20, color: "#e2e8f0", font: { size: 15 } } }
+                    }
+                }
+            })
+        }
+        
+        // ====================== REPORTS ======================
+        function renderReports() {
+            const ctx = document.getElementById("houseOccupancyChart")
+            if (ctx.chartInstance) ctx.chartInstance.destroy()
+            
+            const allHouses = [...boysHousesData, ...girlsHousesData]
+            const labels = allHouses.map(h => h.name)
+            const planData = allHouses.map(h => {
+                const s = calculateHouseStats([h])
+                return Math.round((s.totalCurrent / s.totalTarget) * 100)
+            })
+            
+            ctx.chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '% of Planned Capacity',
+                        data: planData,
+                        backgroundColor: '#00a3ff',
+                        borderRadius: 12
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { max: 120, grid: { color: "#334155" } },
+                        y: { grid: { color: "#334155" } }
+                    }
+                }
+            })
+            
+            // Overcapacity list
+            const overList = document.getElementById("overcapacity-list")
+            overList.innerHTML = ""
+            let overRooms = []
+            boysHousesData.forEach(h => h.rooms.forEach(r => {
+                if (r.current > r.beds) overRooms.push({gender: "👦", house: h.name, room: r.name, current: r.current, beds: r.beds})
+            }))
+            girlsHousesData.forEach(h => h.rooms.forEach(r => {
+                if (r.current > r.beds) overRooms.push({gender: "👧", house: h.name, room: r.name, current: r.current, beds: r.beds})
+            }))
+            
+            overRooms.forEach(r => {
+                const li = document.createElement("li")
+                li.className = "flex items-center justify-between bg-slate-800 rounded-2xl px-4 py-3"
+                li.innerHTML = `
+                    <div class="flex items-center gap-x-4">
+                        <span class="text-2xl">${r.gender}</span>
+                        <div><span class="font-medium">${r.house} • ${r.room}</span></div>
+                    </div>
+                    <div class="text-rose-400 font-medium">${r.current}/${r.beds} beds</div>
+                `
+                overList.appendChild(li)
+            })
+            
+            // Utilization bars (plan progress)
+            const utilContainer = document.getElementById("utilization-bars")
+            utilContainer.innerHTML = allHouses.map(h => {
+                const s = calculateHouseStats([h])
+                const perc = Math.round((s.totalCurrent / s.totalTarget) * 100)
+                return `
+                <div>
+                    <div class="flex justify-between text-xs mb-2">
+                        <span>${h.name}</span>
+                        <span class="font-medium">${perc}%</span>
+                    </div>
+                    <div class="h-2.5 bg-slate-700 rounded-3xl">
+                        <div class="bg-violet-500 h-2.5 rounded-3xl" style="width: ${perc}%"></div>
+                    </div>
+                </div>`
+            }).join("")
+        }
+        
+        // ====================== GLOBAL ======================
+        function refreshAllUI() {
+            renderBoysHouses()
+            renderGirlsHouses()
+            renderDashboard()
+            renderAllocationTable()
+        }
+        
+        function resetAllData() {
+            if (!confirm("Clear ALL allocations? This resets every room to 0 campers (planned numbers stay the same).")) return
+            boysHousesData = JSON.parse(JSON.stringify(originalBoysData))
+            girlsHousesData = JSON.parse(JSON.stringify(originalGirlsData))
+            recentAllocList = []
+            refreshAllUI()
+            showToast("🔄 All allocations cleared – ready for new campers!")
+        }
+        
+        function showSection(section) {
+            document.querySelectorAll("#section-dashboard, #section-boys, #section-girls, #section-allocation, #section-reports").forEach(s => s.classList.add("hidden"))
+            document.getElementById(`section-${section}`).classList.remove("hidden")
+            
+            document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active-nav", "border-b-2", "border-[#00a3ff]"))
+            const active = document.getElementById(`nav-${section}`)
+            if (active) active.classList.add("active-nav", "border-b-2", "border-[#00a3ff]")
+            
+            if (section === "boys") renderBoysHouses()
+            if (section === "girls") renderGirlsHouses()
+            if (section === "allocation") {
+                populateBulkSelects()
+                renderAllocationTable()
+            }
+            if (section === "reports") renderReports()
+            if (section === "dashboard") renderDashboard()
+        }
+        
+        function handleGlobalSearch() {
+            const query = document.getElementById("global-search").value.toLowerCase().trim()
+            if (!query) return
+            showSection("allocation")
+            setTimeout(() => {
+                document.getElementById("allocation-search").value = query
+                filterAllocationTable()
+            }, 200)
+        }
+        
+        function showToast(message = "✅ Done!") {
+            const toast = document.getElementById("toast")
+            toast.textContent = message
+            toast.classList.remove("hidden")
+            setTimeout(() => {
+                toast.classList.add("hidden")
+            }, 2800)
+        }
+        
+        // ====================== START ======================
+        window.onload = function() {
+            renderBoysHouses()
+            renderGirlsHouses()
+            renderDashboard()
+            console.log('%c✅ HostelHub Camp Meeting Edition ready for Samuel in Accra!', 'background:#00a3ff;color:#fff;padding:1px 3px;border-radius:2px')
+            // Default to dashboard
+        }
+    </script>
+</body>
+</html>
